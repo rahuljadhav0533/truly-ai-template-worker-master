@@ -1,0 +1,25 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+
+# Google Cloud
+google-cloud-storage
+google-cloud-aiplatform
+
+# Vertex AI (new SDK)
+google-generativeai
+
+# PDF Processing
+pymupdf
+pdfminer.six
+pdfplumber
+
+# Upload handling
+python-multipart
+
+# Database
+pymongo
+
+# Utilities
+requests
+tqdm

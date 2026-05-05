@@ -1,0 +1,68 @@
+# ------------------------------
+# Python
+# ------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.env/
+.env.*
+
+# ------------------------------
+# Environment variables
+# ------------------------------
+.env
+
+# ------------------------------
+# Service Account / Secrets
+# ------------------------------
+service-account.json
+*.json
+
+# (IMPORTANT)
+# If you have other JSON configs, whitelist them explicitly
+!package.json
+!tsconfig.json
+
+# ------------------------------
+# Logs
+# ------------------------------
+*.log
+
+# ------------------------------
+# OS Files
+# ------------------------------
+.DS_Store
+Thumbs.db
+
+# ------------------------------
+# IDE / Editor
+# ------------------------------
+.vscode/
+.idea/
+
+# ------------------------------
+# Build / cache
+# ------------------------------
+dist/
+build/
+*.egg-info/
+
+# ------------------------------
+# Pytest / coverage
+# ------------------------------
+.coverage
+.pytest_cache/
+
+# ------------------------------
+# Docker
+# ------------------------------
+*.dockerignore
+
+# ------------------------------
+# Misc
+# ------------------------------
+*.sqlite3
+*.db
