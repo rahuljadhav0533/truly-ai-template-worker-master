@@ -78,41 +78,19 @@ async def process_pubsub(request: Request):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-@app.post("/generate-questions-universal")
-async def generate_questions_universal(file: UploadFile = File(...)):
+import pdfplumber
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-        shutil.copyfileobj(file.file, tmp)
-        file_path = tmp.name
+text = ""
 
-    pdf_type = detect_pdf_type(file_path)
+with pdfplumber.open(file_path) as pdf:
+    for page in pdf.pages:
+        text += page.extract_text() or ""
 
-    all_questions = []
+print("DEBUG TEXT:", text[:1000])  # check extraction
 
-    try:
-        if pdf_type == "text":
-            parsed = extract_pdf(file_path)
+ai_output = generate_questions(text)
 
-            for section in parsed.get("sections", []):
-                for chunk in section.get("chunks", []):
-                    ai_output = generate_questions(chunk)
-                    all_questions.extend(ai_output.get("questions", []))
-
-        else:
-            text = extract_text_ocr(file_path)
-            ai_output = generate_questions(text)
-            all_questions.extend(ai_output.get("questions", []))
-
-        all_questions = deduplicate_questions(all_questions)
-
-        return {
-            "pdf_type": pdf_type,
-            "total_questions": len(all_questions),
-            "questions": all_questions
-        }
-
-    finally:
-        os.remove(file_path)  # ✅ cleanup
+all_questions = ai_output.get("questions", [])
 
 
 @app.post("/extract-i130")
