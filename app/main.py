@@ -70,3 +70,40 @@ async def process_pubsub(request: Request):
     except Exception as e:
         print("Error:", str(e))
         return {"status": "error", "message": str(e)}
+
+import pdfplumber
+import re
+
+@app.post("/extract-i130")
+async def extract_i130(file: UploadFile = File(...)):
+    
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+        shutil.copyfileobj(file.file, tmp)
+        temp_path = tmp.name
+
+    # Read PDF text
+    text = ""
+    with pdfplumber.open(temp_path) as pdf:
+        for page in pdf.pages:
+            text += page.extract_text() or ""
+
+    # Clean extraction (your logic)
+    result = {
+        "form_name": "I-130 Petition for Alien Relative",
+        "petitioner": {
+            "full_name": None,
+            "ssn": None,
+            "date_of_birth": None,
+            "country_of_birth": None,
+            "marital_status": None,
+            "address": None
+        },
+        "beneficiary": {
+            "full_name": None,
+            "date_of_birth": None,
+            "country_of_birth": None,
+            "address": None
+        }
+    }
+
+    return result
