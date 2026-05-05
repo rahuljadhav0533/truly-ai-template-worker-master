@@ -1,3 +1,6 @@
+import fitz
+from pdf2image import convert_from_path
+import pytesseract
 from fastapi import FastAPI, UploadFile, File, Request
 import tempfile
 import shutil
@@ -8,14 +11,28 @@ from app.processor import process_pdf, process_pdf_file_from_gcs
 
 app = FastAPI()
 
-
-# -----------------------------
-# Health check
-# -----------------------------
 @app.get("/")
 def health():
     return {"status": "ok"}
 
+def detect_pdf_type(path):
+    doc = fitz.open(path)
+
+    for page in doc:
+        if page.get_text().strip():
+            return "text"
+
+    return "scanned"
+
+
+def extract_text_ocr(path):
+    images = convert_from_path(path)
+    text = ""
+
+    for img in images:
+        text += pytesseract.image_to_string(img)
+
+    return text
 
 # -----------------------------
 # Manual upload (testing)
@@ -108,3 +125,37 @@ async def extract_i130(file: UploadFile = File(...)):
  
 
     return result
+
+@app.post("/generate-questions-universal")
+async def generate_questions_universal(file: UploadFile = File(...)):
+
+    import tempfile, shutil
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+        shutil.copyfileobj(file.file, tmp)
+        file_path = tmp.name
+
+    pdf_type = detect_pdf_type(file_path)
+
+    all_questions = []
+
+    if pdf_type == "text":
+        parsed = extract_pdf(file_path)
+
+        for section in parsed.get("sections", []):
+            for chunk in section.get("chunks", []):
+                ai_output = generate_questions(chunk)
+                all_questions.extend(ai_output.get("questions", []))
+
+    else:
+        text = extract_text_ocr(file_path)
+        ai_output = generate_questions(text)
+        all_questions.extend(ai_output.get("questions", []))
+
+    all_questions = deduplicate_questions(all_questions)
+
+    return {
+        "pdf_type": pdf_type,
+        "total_questions": len(all_questions),
+        "questions": all_questions
+    }
