@@ -89,21 +89,22 @@ async def extract_i130(file: UploadFile = File(...)):
 
     # Clean extraction (your logic)
     result = {
-        "form_name": "I-130 Petition for Alien Relative",
-        "petitioner": {
-            "full_name": None,
-            "ssn": None,
-            "date_of_birth": None,
-            "country_of_birth": None,
-            "marital_status": None,
-            "address": None
-        },
-        "beneficiary": {
-            "full_name": None,
-            "date_of_birth": None,
-            "country_of_birth": None,
-            "address": None
-        }
+    "form_name": "I-130 Petition for Alien Relative",
+    "petitioner": {
+        "full_name": extract_full_name(text),
+        "ssn": extract_pattern(text, r"Social Security Number.*?(\d+)"),
+        "date_of_birth": extract_pattern(text, r"Date of Birth.*?(\d{2}/\d{2}/\d{4})"),
+        "country_of_birth": extract_country_safe(text),
+        "marital_status": extract_marital_status(text),
+        "address": None
+    },
+    "beneficiary": {
+        "full_name": extract_full_name(text),
+        "date_of_birth": extract_pattern(text, r"Date of Birth.*?(\d{2}/\d{2}/\d{4})"),
+        "country_of_birth": extract_country_safe(text),
+        "address": None
     }
+}
+ 
 
     return result
