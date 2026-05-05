@@ -51,7 +51,7 @@ async def process(file: UploadFile = File(...)):
 
     result = process_pdf(temp_path)
 
-    os.remove(temp_path)  # ✅ cleanup
+    os.remove(temp_path)
     return result
 
 @app.post("/process-pubsub")
@@ -78,19 +78,47 @@ async def process_pubsub(request: Request):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-import pdfplumber
+@app.post("/generate-questions-universal")
+async def generate_questions_universal(file: UploadFile = File(...)):
 
-text = ""
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+        shutil.copyfileobj(file.file, tmp)
+        file_path = tmp.name
 
-with pdfplumber.open(file_path) as pdf:
-    for page in pdf.pages:
-        text += page.extract_text() or ""
+    all_questions = []
 
-print("DEBUG TEXT:", text[:1000])  # check extraction
+    try:
+        pdf_type = detect_pdf_type(file_path)
 
-ai_output = generate_questions(text)
+        if pdf_type == "text":
+            text = ""
+            with pdfplumber.open(file_path) as pdf:
+                for page in pdf.pages:
+                    text += page.extract_text() or ""
 
-all_questions = ai_output.get("questions", [])
+            print("DEBUG TEXT:", text[:1000])
+
+            ai_output = generate_questions(text)
+            all_questions = ai_output.get("questions", [])
+
+        else:
+            text = extract_text_ocr(file_path)
+
+            print("OCR TEXT:", text[:1000])
+
+            ai_output = generate_questions(text)
+            all_questions = ai_output.get("questions", [])
+
+        all_questions = deduplicate_questions(all_questions)
+
+        return {
+            "pdf_type": pdf_type,
+            "total_questions": len(all_questions),
+            "questions": all_questions
+        }
+
+    finally:
+        os.remove(file_path)
 
 
 @app.post("/extract-i130")
@@ -107,4 +135,4 @@ async def extract_i130(file: UploadFile = File(...)):
 
     os.remove(temp_path)
 
-    return {"raw_text": text[:1000]}  # simplified
+    return {"raw_text": text[:1000]}
